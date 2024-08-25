@@ -1,0 +1,11 @@
+services:
+  db: 
+    image: hello-world
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    ports:
+      - "5400:5400"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres

@@ -1,13 +1,13 @@
 package controller
 
 import (
-	"net/http"
-
+	"github.com/chris097/gin-gorm-test/config"
+	"github.com/chris097/gin-gorm-test/models"
 	"github.com/gin-gonic/gin"
 )
 
 func UserController(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{
-		"message": "pong",
-	})
+	users := []models.User{}
+	config.DB.Find(&users)
+	c.JSON(200, &users)
 }
