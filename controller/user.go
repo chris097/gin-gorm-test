@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/chris097/gin-gorm-test/config"
 	"github.com/chris097/gin-gorm-test/models"
@@ -9,9 +10,37 @@ import (
 )
 
 // GetUsers retrieves all users
+// func GetUsers(c *gin.Context) {
+// 	users := []models.User{}
+// 	if err := config.DB.Find(&users).Error; err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve users"})
+// 		return
+// 	}
+// 	c.JSON(http.StatusOK, &users)
+// }
+
 func GetUsers(c *gin.Context) {
 	users := []models.User{}
-	if err := config.DB.Find(&users).Error; err != nil {
+	query := config.DB
+
+	// Retrieve filter parameters from the query string
+	name := c.Query("name")
+	email := c.Query("email")
+	description := c.Query("description")
+
+	// Apply filters based on provided parameters with case-insensitive comparison
+	if name != "" {
+		query = query.Where("LOWER(name) LIKE ?", strings.ToLower(name))
+	}
+	if email != "" {
+		query = query.Where("LOWER(email) LIKE ?", strings.ToLower(email))
+	}
+	if description != "" {
+		query = query.Where("LOWER(description) LIKE ?", strings.ToLower(description))
+	}
+
+	// Execute the query
+	if err := query.Find(&users).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve users"})
 		return
 	}
@@ -21,14 +50,26 @@ func GetUsers(c *gin.Context) {
 // CreateUsers creates a new user
 func CreateUsers(c *gin.Context) {
 	var user models.User
+
+	// Bind JSON input to the user struct
 	if err := c.BindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
+
+	// Check if all required fields are provided
+	if user.Name == "" || user.Email == "" || user.Description == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "All fields are required"})
+		return
+	}
+
+	// Attempt to create the user in the database
 	if err := config.DB.Create(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
+
+	// Return the created user
 	c.JSON(http.StatusOK, &user)
 }
 
